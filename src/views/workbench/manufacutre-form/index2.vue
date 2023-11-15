@@ -1,0 +1,151 @@
+<template>
+  <vxe-grid ref="xGrid2" v-bind="gridOptions2" />
+</template>
+
+<script lang="ts">
+  import { defineComponent, reactive, ref, onUnmounted, nextTick } from 'vue';
+  import { VXETable, VxeGridInstance, VxeGridProps } from 'vxe-table';
+
+  import Sortable from 'sortablejs';
+
+  export default defineComponent({
+    setup() {
+      const xGrid2 = ref({} as VxeGridInstance);
+
+      const gridOptions2 = reactive({
+        border: true,
+
+        class: 'sortable-column-demo',
+        columnConfig: {
+          useKey: true,
+        },
+        scrollX: {
+          enabled: false,
+        },
+        toolbarConfig: {
+          custom: true,
+        },
+        columns: [
+          { field: 'name', title: 'Name', fixed: 'left', width: 300 },
+          { field: 'nickname', title: 'Nickname' },
+          { field: 'role', title: 'Role' },
+          { field: 'sex', title: 'Sex' },
+          { field: 'age', title: 'Age' },
+          { field: 'date3', title: 'Date' },
+          { field: 'address', title: 'Address', width: 200, fixed: 'right', showOverflow: true },
+        ],
+        data: [
+          {
+            id: 10001,
+            name: 'Test1',
+            nickname: 'T1',
+            role: 'Develop',
+            sex: 'Man',
+            age: 28,
+            address: 'Shenzhen',
+          },
+          {
+            id: 10002,
+            name: 'Test2',
+            nickname: 'T2',
+            role: 'Test',
+            sex: 'Women',
+            age: 22,
+            address: 'Guangzhou',
+          },
+          {
+            id: 10003,
+            name: 'Test3',
+            nickname: 'T3',
+            role: 'PM',
+            sex: 'Man',
+            age: 32,
+            address: 'Shanghai',
+          },
+          {
+            id: 10004,
+            name: 'Test4',
+            nickname: 'T4',
+            role: 'Designer',
+            sex: 'Women',
+            age: 23,
+            address: 'Shenzhen',
+          },
+          {
+            id: 10005,
+            name: 'Test5',
+            nickname: 'T5',
+            role: 'Develop',
+            sex: 'Women',
+            age: 30,
+            address: 'Shanghai',
+          },
+        ],
+      } as VxeGridProps);
+
+      let sortable2: any;
+
+      const columnDrop2 = () => {
+        const $grid = xGrid2.value;
+        sortable2 = Sortable.create(
+          $grid.$el.querySelector('.body--wrapper>.vxe-table--header .vxe-header--row'),
+          {
+            handle: '.vxe-header--column',
+            onEnd: (sortableEvent) => {
+              const targetThElem = sortableEvent.item;
+              const newIndex = sortableEvent.newIndex as number;
+              const oldIndex = sortableEvent.oldIndex as number;
+              const { fullColumn, tableColumn } = $grid.getTableColumn();
+              const wrapperElem = targetThElem.parentNode as HTMLElement;
+              const newColumn = fullColumn[newIndex];
+              if (newColumn.fixed) {
+                // 错误的移动
+                const oldThElem = wrapperElem.children[oldIndex] as HTMLElement;
+                if (newIndex > oldIndex) {
+                  wrapperElem.insertBefore(targetThElem, oldThElem);
+                } else {
+                  wrapperElem.insertBefore(
+                    targetThElem,
+                    oldThElem ? oldThElem.nextElementSibling : oldThElem,
+                  );
+                }
+                VXETable.modal.message({ content: '固定列不允许拖动！', status: 'error' });
+                return;
+              }
+              // 获取列索引 columnIndex > fullColumn
+              const oldColumnIndex = $grid.getColumnIndex(tableColumn[oldIndex]);
+              const newColumnIndex = $grid.getColumnIndex(tableColumn[newIndex]);
+              // 移动到目标列
+              const currRow = fullColumn.splice(oldColumnIndex, 1)[0];
+              fullColumn.splice(newColumnIndex, 0, currRow);
+              $grid.loadColumn(fullColumn);
+            },
+          },
+        );
+      };
+
+      let initTime: any;
+      nextTick(() => {
+        // 加载完成之后在绑定拖动事件
+        initTime = setTimeout(() => {
+          columnDrop2();
+        }, 500);
+      });
+
+      onUnmounted(() => {
+        clearTimeout(initTime);
+        if (sortable2) {
+          sortable2.destroy();
+        }
+      });
+
+      return {
+        xGrid2,
+        gridOptions2,
+        columnDrop2,
+      };
+    },
+  });
+</script>
+
+<style></style>
